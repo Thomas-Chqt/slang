@@ -28,6 +28,8 @@ endif()
 # Unordered dense
 if(NOT ${SLANG_USE_SYSTEM_UNORDERED_DENSE})
     if(NOT SLANG_OVERRIDE_UNORDERED_DENSE_PATH)
+        find_program(GIT_PATH git REQUIRED)
+        execute_process(COMMAND ${GIT_PATH} submodule update --init unordered_dense WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
         add_subdirectory(unordered_dense EXCLUDE_FROM_ALL ${system})
     else()
         add_subdirectory(
@@ -42,6 +44,8 @@ endif()
 # Miniz
 if(NOT ${SLANG_USE_SYSTEM_MINIZ})
     if(NOT SLANG_OVERRIDE_MINIZ_PATH)
+        find_program(GIT_PATH git REQUIRED)
+        execute_process(COMMAND ${GIT_PATH} submodule update --init miniz WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
         add_subdirectory(miniz EXCLUDE_FROM_ALL ${system})
     else()
         add_subdirectory(
@@ -64,6 +68,8 @@ endif()
 if(NOT ${SLANG_USE_SYSTEM_LZ4})
     set(LZ4_BUNDLED_MODE ON)
     if(NOT SLANG_OVERRIDE_LZ4_PATH)
+        find_program(GIT_PATH git REQUIRED)
+        execute_process(COMMAND ${GIT_PATH} submodule update --init lz4 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
         add_subdirectory(lz4/build/cmake EXCLUDE_FROM_ALL ${system})
     else()
         add_subdirectory(
@@ -81,28 +87,34 @@ if(NOT ${SLANG_USE_SYSTEM_LZ4})
     endif()
 endif()
 
-# Vulkan headers
-if(NOT TARGET Vulkan::Headers)
-    if(NOT ${SLANG_USE_SYSTEM_VULKAN_HEADERS})
-        if(NOT SLANG_OVERRIDE_VULKAN_HEADERS_PATH)
-            add_subdirectory(vulkan EXCLUDE_FROM_ALL ${system})
-        else()
-            add_subdirectory(
-                ${SLANG_OVERRIDE_VULKAN_HEADERS_PATH}/vulkan
-                vulkan
-                EXCLUDE_FROM_ALL
-                ${system}
-            )
+if (SLANG_ENABLE_GFX)
+    # Vulkan headers
+    if(NOT TARGET Vulkan::Headers)
+        if(NOT ${SLANG_USE_SYSTEM_VULKAN_HEADERS})
+            if(NOT SLANG_OVERRIDE_VULKAN_HEADERS_PATH)
+                find_program(GIT_PATH git REQUIRED)
+                execute_process(COMMAND ${GIT_PATH} submodule update --init vulkan WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+                add_subdirectory(vulkan EXCLUDE_FROM_ALL ${system})
+            else()
+                add_subdirectory(
+                    ${SLANG_OVERRIDE_VULKAN_HEADERS_PATH}/vulkan
+                    vulkan
+                    EXCLUDE_FROM_ALL
+                    ${system}
+                )
+            endif()
         endif()
     endif()
-endif()
 
-# metal-cpp headers
-add_library(metal-cpp INTERFACE)
-target_include_directories(
-    metal-cpp
-    INTERFACE "${CMAKE_CURRENT_LIST_DIR}/metal-cpp"
-)
+    # metal-cpp headers
+    add_library(metal-cpp INTERFACE)
+    find_program(GIT_PATH git REQUIRED)
+    execute_process(COMMAND ${GIT_PATH} submodule update --init metal-cpp WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    target_include_directories(
+        metal-cpp
+        INTERFACE "${CMAKE_CURRENT_LIST_DIR}/metal-cpp"
+    )
+endif()
 
 # SPIRV-Headers
 if(NOT TARGET SPIRV-Headers)
@@ -121,6 +133,8 @@ if(NOT TARGET SPIRV-Headers)
             ${system}
         )
     else()
+        find_program(GIT_PATH git REQUIRED)
+        execute_process(COMMAND ${GIT_PATH} submodule update --init spirv-headers WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
         add_subdirectory(spirv-headers EXCLUDE_FROM_ALL ${system})
     endif()
 endif()
@@ -149,6 +163,8 @@ if(SLANG_ENABLE_SLANG_GLSLANG)
         set(SPIRV_SKIP_TESTS ON)
         # Tools
         if(NOT SLANG_OVERRIDE_SPIRV_TOOLS_PATH)
+            find_program(GIT_PATH git REQUIRED)
+            execute_process(COMMAND ${GIT_PATH} submodule update --init spirv-tools WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
             add_subdirectory(spirv-tools EXCLUDE_FROM_ALL ${system})
         else()
             add_subdirectory(
@@ -167,6 +183,8 @@ if(SLANG_ENABLE_SLANG_GLSLANG)
         set(ENABLE_PCH OFF)
         set(ALLOW_EXTERNAL_SPIRV_TOOLS ${SLANG_USE_SYSTEM_SPIRV_TOOLS})
         if(NOT SLANG_OVERRIDE_GLSLANG_PATH)
+            find_program(GIT_PATH git REQUIRED)
+            execute_process(COMMAND ${GIT_PATH} submodule update --init glslang WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
             add_subdirectory(glslang EXCLUDE_FROM_ALL ${system})
         else()
             add_subdirectory(
@@ -179,29 +197,36 @@ if(SLANG_ENABLE_SLANG_GLSLANG)
     endif()
 endif()
 
-# imgui
-add_library(imgui INTERFACE)
-if(NOT SLANG_OVERRIDE_IMGUI_PATH)
+if (SLANG_ENABLE_TESTS AND SLANG_ENABLE_SLANG_RHI)
+    # imgui
+    add_library(imgui INTERFACE)
+    if(NOT SLANG_OVERRIDE_IMGUI_PATH)
+        find_program(GIT_PATH git REQUIRED)
+        execute_process(COMMAND ${GIT_PATH} submodule update --init imgui WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+        target_include_directories(
+            imgui
+            ${system}
+            INTERFACE "${CMAKE_CURRENT_LIST_DIR}/imgui"
+        )
+    else()
+        target_include_directories(
+            imgui
+            ${system}
+            INTERFACE "${SLANG_OVERRIDE_IMGUI_PATH}/imgui"
+        )
+    endif()
+
+    # stb
+    add_library(stb INTERFACE)
+    find_program(GIT_PATH git REQUIRED)
+    execute_process(COMMAND ${GIT_PATH} submodule update --init stb WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     target_include_directories(
-        imgui
+        stb
         ${system}
-        INTERFACE "${CMAKE_CURRENT_LIST_DIR}/imgui"
-    )
-else()
-    target_include_directories(
-        imgui
-        ${system}
-        INTERFACE "${SLANG_OVERRIDE_IMGUI_PATH}/imgui"
+        INTERFACE "${CMAKE_CURRENT_LIST_DIR}/stb"
     )
 endif()
 
-# stb
-add_library(stb INTERFACE)
-target_include_directories(
-    stb
-    ${system}
-    INTERFACE "${CMAKE_CURRENT_LIST_DIR}/stb"
-)
 
 # slang-rhi
 if(SLANG_ENABLE_SLANG_RHI)
@@ -236,6 +261,8 @@ if(SLANG_ENABLE_SLANG_RHI)
         set(SLANG_RHI_ENABLE_D3D12 OFF)
     endif()
     if(NOT SLANG_OVERRIDE_SLANG_RHI_PATH)
+        find_program(GIT_PATH git REQUIRED)
+        execute_process(COMMAND ${GIT_PATH} submodule update --init slang-rhi WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
         add_subdirectory(slang-rhi)
     else()
         add_subdirectory(

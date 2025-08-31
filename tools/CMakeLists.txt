@@ -46,6 +46,8 @@ function(generator dir)
 endfunction()
 
 if(NOT SLANG_OVERRIDE_LUA_PATH)
+    find_program(GIT_PATH git REQUIRED)
+    execute_process(COMMAND ${GIT_PATH} submodule update --init ${slang_SOURCE_DIR}/external/lua WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     generator(
         slang-fiddle
         LINK_WITH_PRIVATE
